@@ -9,6 +9,8 @@ import (
 )
 
 var decode = flag.Bool("d", false, "decode string in clipboard")
+var urlSafe = flag.Bool("u", false, "whether to use url-safe encoding or not")
+var noPadding = flag.Bool("n", false, "whether to use padding or not")
 
 func main() {
 	flag.Parse()
@@ -18,14 +20,25 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	var enc *base64.Encoding
+	if *urlSafe {
+		enc = base64.URLEncoding
+	} else {
+		enc = base64.StdEncoding
+	}
+
+	if *noPadding {
+		enc = enc.WithPadding(base64.NoPadding)
+	}
+
 	if *decode {
-		b, err := base64.RawURLEncoding.DecodeString(str)
+		b, err := enc.DecodeString(str)
 		if err != nil {
 			log.Fatalln(err)
 		}
 		str = string(b)
 	} else {
-		str = base64.RawURLEncoding.EncodeToString([]byte(str))
+		str = enc.EncodeToString([]byte(str))
 	}
 
 	err = clipboard.WriteAll(str)
